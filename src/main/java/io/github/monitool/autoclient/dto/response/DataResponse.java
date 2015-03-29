@@ -11,7 +11,7 @@ public class DataResponse {
     private Date date;
     private double cpuLoad;
     private double memLoad;
-    //private double discLoad;
+    private double discLoad;
 
     public String getSensorId() {
         return sensorId;
@@ -44,7 +44,7 @@ public class DataResponse {
     public void setMemLoad(double memLoad) {
         this.memLoad = memLoad;
     }
-/*
+
     public double getDiscLoad() {
         return discLoad;
     }
@@ -52,5 +52,5 @@ public class DataResponse {
     public void setDiscLoad(double discLoad) {
         this.discLoad = discLoad;
     }
-    */
+
 }

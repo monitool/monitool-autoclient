@@ -24,7 +24,7 @@ public class Autoclient {
             System.out.println("Connection error");
             System.exit(1);
         }
-        ReadScheduler.start("0/5 * * * * ?");
+        ReadScheduler.start("0/1 * * * * ?");
     }
 
 
