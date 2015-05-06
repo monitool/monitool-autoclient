@@ -2,6 +2,7 @@ package io.github.monitool.autoclient.quartz;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
+import io.github.monitool.autoclient.Mode;
 import io.github.monitool.autoclient.Printer;
 import io.github.monitool.autoclient.RestProcessor;
 import io.github.monitool.autoclient.dto.response.DataResponse;
@@ -12,6 +13,8 @@ import org.quartz.JobExecutionException;
 
 import java.io.IOException;
 import java.util.*;
+
+import static io.github.monitool.autoclient.Mode.*;
 
 /**
  * Created by Bartosz Głowacki on 2015-03-28.
@@ -32,15 +35,30 @@ public class ReadJob implements Job {
             if(context.getPreviousFireTime()!=null){
                 Printer.clear();
             }
-            Printer.print(sortAndFilterData(sensors, newestData));
+            Mode mode = Mode.fromString((String) context.getJobDetail().getJobDataMap().get("mode"));
+            Printer.print(sortAndFilterData(sensors, newestData, mode));
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private Map<DataResponse,SensorResponse> sortAndFilterData(List<SensorResponse> sensors,List<DataResponse> data){
-        Map<DataResponse,SensorResponse> result = new TreeMap<DataResponse,SensorResponse>(new CpuComparator());
-        data.sort(new CpuComparator());//TODO wybor sortowania przez flage
+    private Map<DataResponse,SensorResponse> sortAndFilterData(List<SensorResponse> sensors,List<DataResponse> data, Mode mode){
+        Comparator comparator;
+        switch(mode){
+            case CPU:
+                comparator = new CpuComparator();
+                break;
+            case MEM:
+                comparator = new MemComparator();
+                break;
+            case HDD:
+                comparator = new DiscComparator();
+                break;
+            default:
+                comparator = new MemComparator();
+        }
+        Map<DataResponse,SensorResponse> result = new TreeMap<DataResponse,SensorResponse>(comparator);
+        data.sort(comparator);
         for(final DataResponse d:data){
             SensorResponse sensor = FluentIterable.from(sensors).firstMatch(new Predicate<SensorResponse>() {
                 @Override
@@ -64,6 +82,24 @@ public class ReadJob implements Job {
         public int compare(DataResponse o1, DataResponse o2) {
             if(o1.getCpuLoad()>(o2.getCpuLoad())) return -1;
             else if(o1.getCpuLoad()<(o2.getCpuLoad())) return 1;
+            else return 0;
+        }
+    }
+
+    class MemComparator implements Comparator<DataResponse>{
+        @Override
+        public int compare(DataResponse o1, DataResponse o2) {
+            if(o1.getMemLoad()>(o2.getMemLoad())) return -1;
+            else if(o1.getMemLoad()<(o2.getMemLoad())) return 1;
+            else return 0;
+        }
+    }
+
+    class DiscComparator implements Comparator<DataResponse>{
+        @Override
+        public int compare(DataResponse o1, DataResponse o2) {
+            if(o1.getDiscLoad()>(o2.getDiscLoad())) return -1;
+            else if(o1.getDiscLoad()<(o2.getDiscLoad())) return 1;
             else return 0;
         }
     }

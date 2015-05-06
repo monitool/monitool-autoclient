@@ -1,5 +1,6 @@
 package io.github.monitool.autoclient.quartz;
 
+import io.github.monitool.autoclient.Mode;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 
@@ -8,12 +9,12 @@ import org.quartz.impl.StdSchedulerFactory;
  */
 public class ReadScheduler {
 
-        public static void start(String cron) {
-            start(cron, ReadJob.class);
+        public static void start(String cron, Mode mode) {
+            start(cron, ReadJob.class, mode);
         }
 
-        static void start(String cron, Class<? extends Job> jobClass) {
-            JobDetail job = JobBuilder.newJob(jobClass).build();
+        static void start(String cron, Class<? extends Job> jobClass, Mode mode) {
+            JobDetail job = JobBuilder.newJob(jobClass).usingJobData("mode",mode.getMode()).build();
             Trigger trigger = TriggerBuilder.newTrigger()
                     .withSchedule(CronScheduleBuilder.cronSchedule(cron)).build();
             try {

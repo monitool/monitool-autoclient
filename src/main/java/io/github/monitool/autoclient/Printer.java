@@ -36,9 +36,7 @@ public class Printer {
     }
 
     public static void clear(){
-        for(int i=0;i<128;++i){
-            System.out.print("\b");
-        }
+        //System.out.print("");
     }
 
 
