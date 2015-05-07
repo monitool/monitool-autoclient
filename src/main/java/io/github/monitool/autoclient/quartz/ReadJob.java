@@ -11,10 +11,9 @@ import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
+import javax.xml.ws.http.HTTPException;
 import java.io.IOException;
 import java.util.*;
-
-import static io.github.monitool.autoclient.Mode.*;
 
 /**
  * Created by Bartosz Głowacki on 2015-03-28.
@@ -24,7 +23,7 @@ public class ReadJob implements Job {
     RestProcessor restProcessor;
 
     public void execute(JobExecutionContext context) throws JobExecutionException {
-        restProcessor=new RestProcessor();//RestProcessor.getInstance();
+        restProcessor=new RestProcessor();
         try {
             List<SensorResponse> sensors = restProcessor.getSensors();
             List<DataResponse> newestData = new ArrayList<DataResponse>();
@@ -34,8 +33,8 @@ public class ReadJob implements Job {
             }
             Mode mode = Mode.fromString((String) context.getJobDetail().getJobDataMap().get("mode"));
             Printer.print(sortAndFilterData(sensors, newestData, mode));
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException|HTTPException e) {
+            System.exit(1);
         }
     }
 

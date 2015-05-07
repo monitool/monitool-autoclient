@@ -9,49 +9,37 @@ import io.github.monitool.autoclient.dto.LoginDTO;
 import io.github.monitool.autoclient.dto.response.DataResponse;
 import io.github.monitool.autoclient.dto.response.SensorResponse;
 import io.github.monitool.autoclient.dto.response.LoginResponse;
+import io.github.monitool.autoclient.dto.response.UptimeResponse;
 
 import javax.xml.ws.http.HTTPException;
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.text.SimpleDateFormat;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by Bartosz Głowacki on 2015-03-28.
  */
 public class RestProcessor {
 
-    private static RestProcessor instance;
-/*
-    private RestProcessor(){};
-
-    public static RestProcessor getInstance(){
-        if(instance==null){
-            instance = new RestProcessor();
-        }
-        return instance;
-    }
-*/
     private ClientHttp client = new ClientHttp();
     List<LoginDTO> monitors = Lists.newArrayList();
     Map<String,LoginDTO> sensorTokens = Maps.newHashMap();
 
-    public void login() throws IOException {
+    public void login() throws IOException, HTTPException {
         ConfigParser parser = new ConfigParser();
         monitors = parser.parse();
         for(LoginDTO monitor:monitors) {
-            String response = client.post(buildURL("Users/login",monitor), buildJSON(monitor));
-            if(response.contains("error")){
+            try {
+                String response = client.post(buildURL("Users/login", monitor), buildJSON(monitor));
+                monitor.setAuthToken(parseToken(response));
+            } catch (HTTPException e){
                 System.out.println("Invalid credentials for monitor at: " + monitor.getUrl());
-                throw new HTTPException(400);
+                throw e;
             }
-            monitor.setAuthToken(parseToken(response));
         }
     }
 
-    public List<SensorResponse> getSensors() throws IOException {
+    public List<SensorResponse> getSensors() throws IOException, HTTPException {
         if(monitors.isEmpty()) login();
         List<SensorResponse> sensors = Lists.newArrayList();
         sensorTokens.clear();
@@ -69,14 +57,30 @@ public class RestProcessor {
     public DataResponse getData(String sensorId) throws IOException  {
         if(monitors.isEmpty()) login();
         String response = client.get(buildURL("hosts/" + sensorId + "/data/",this.sensorTokens.get(sensorId)));
-        List<DataResponse> data = parseData(response);
-        return data.size()==0?null:data.get(0);
+        List<DataResponse> dataList = parseData(response);
+        Optional<DataResponse> data = Optional.of(dataList.get(0));
+        if(data.isPresent()){
+            String uptimeResponse = client.get(this.sensorTokens.get(sensorId).getUrl());
+            UptimeResponse uptimeData = parseUptime(uptimeResponse);
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(uptimeData.getStarted());
+            cal.add(Calendar.MILLISECOND, (int)(uptimeData.getUptime()*1000));
+            cal.add(Calendar.SECOND, -10);
+            Date tresholdDate = cal.getTime();
+            if(data.get().getDate().after(tresholdDate)){
+                return data.get();
+            } else {
+                return null;
+            }
+        } else {
+            return null;
+        }
     }
 
 
     private String buildURL(String resource, LoginDTO loginDTO){
         StringBuilder builder = new StringBuilder();
-        builder.append(loginDTO.getUrl()).append(resource).append("?");
+        builder.append(loginDTO.getUrl()).append("api/").append(resource).append("?");
         if(resource.contains("data")){
             builder.append("filter[order]=date%20DESC");
             builder.append("&filter[limit]=1&");
@@ -107,6 +111,11 @@ public class RestProcessor {
         Gson json = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").create();
         Type collectionType = new TypeToken<List<DataResponse>>(){}.getType();
         return json.fromJson(response, collectionType);
+    }
+
+    private UptimeResponse parseUptime(String response){
+        Gson json = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").create();
+        return json.fromJson(response, UptimeResponse.class);
     }
 
 
