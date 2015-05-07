@@ -35,10 +35,5 @@ public class Printer {
         }
     }
 
-    public static void clear(){
-        //System.out.print("");
-    }
-
-
 
 }

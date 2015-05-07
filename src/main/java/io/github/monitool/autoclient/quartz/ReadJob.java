@@ -24,16 +24,13 @@ public class ReadJob implements Job {
     RestProcessor restProcessor;
 
     public void execute(JobExecutionContext context) throws JobExecutionException {
-        restProcessor=RestProcessor.getInstance();
+        restProcessor=new RestProcessor();//RestProcessor.getInstance();
         try {
             List<SensorResponse> sensors = restProcessor.getSensors();
             List<DataResponse> newestData = new ArrayList<DataResponse>();
             for(SensorResponse s:sensors) {
                 DataResponse data = restProcessor.getData(s.getId());
-                newestData.add(data);
-            }
-            if(context.getPreviousFireTime()!=null){
-                Printer.clear();
+                if(data!=null) newestData.add(data);
             }
             Mode mode = Mode.fromString((String) context.getJobDetail().getJobDataMap().get("mode"));
             Printer.print(sortAndFilterData(sensors, newestData, mode));
@@ -63,11 +60,10 @@ public class ReadJob implements Job {
             SensorResponse sensor = FluentIterable.from(sensors).firstMatch(new Predicate<SensorResponse>() {
                 @Override
                 public boolean apply(SensorResponse sensorResponse) {
-                    return sensorResponse.getId().equals(d.getSensorId());
+                    return sensorResponse.getId().equals(d.getHostId());
                 }
             }).orNull();
             if(sensor!=null) {
-                //TODO filtrowanie nieaktywnych sensorow - jak beda aktualne odczyty
                 result.put(d,sensor);
             }
             if(result.size()==10){

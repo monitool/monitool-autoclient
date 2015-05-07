@@ -10,6 +10,7 @@ import io.github.monitool.autoclient.dto.response.DataResponse;
 import io.github.monitool.autoclient.dto.response.SensorResponse;
 import io.github.monitool.autoclient.dto.response.LoginResponse;
 
+import javax.xml.ws.http.HTTPException;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
@@ -23,7 +24,7 @@ import java.util.Map;
 public class RestProcessor {
 
     private static RestProcessor instance;
-
+/*
     private RestProcessor(){};
 
     public static RestProcessor getInstance(){
@@ -32,23 +33,28 @@ public class RestProcessor {
         }
         return instance;
     }
-
+*/
     private ClientHttp client = new ClientHttp();
     List<LoginDTO> monitors = Lists.newArrayList();
-    Map<String,LoginDTO> sensorTokens;
+    Map<String,LoginDTO> sensorTokens = Maps.newHashMap();
 
     public void login() throws IOException {
         ConfigParser parser = new ConfigParser();
         monitors = parser.parse();
         for(LoginDTO monitor:monitors) {
             String response = client.post(buildURL("Users/login",monitor), buildJSON(monitor));
+            if(response.contains("error")){
+                System.out.println("Invalid credentials for monitor at: " + monitor.getUrl());
+                throw new HTTPException(400);
+            }
             monitor.setAuthToken(parseToken(response));
         }
     }
 
     public List<SensorResponse> getSensors() throws IOException {
+        if(monitors.isEmpty()) login();
         List<SensorResponse> sensors = Lists.newArrayList();
-        sensorTokens = Maps.newHashMap();
+        sensorTokens.clear();
         for(LoginDTO monitor:monitors) {
             String response = client.get(buildURL("hosts",monitor));
             List<SensorResponse> tmpSensors = parseSensors(response);
@@ -61,7 +67,8 @@ public class RestProcessor {
     }
 
     public DataResponse getData(String sensorId) throws IOException  {
-        String response = client.get(buildURL("hosts/" + sensorId + "/data/",sensorTokens.get(sensorId)));
+        if(monitors.isEmpty()) login();
+        String response = client.get(buildURL("hosts/" + sensorId + "/data/",this.sensorTokens.get(sensorId)));
         List<DataResponse> data = parseData(response);
         return data.size()==0?null:data.get(0);
     }
@@ -71,7 +78,8 @@ public class RestProcessor {
         StringBuilder builder = new StringBuilder();
         builder.append(loginDTO.getUrl()).append(resource).append("?");
         if(resource.contains("data")){
-            builder.append("filter={\"order\":\"date DESC\",\"limit\":1}");
+            builder.append("filter[order]=date%20DESC");
+            builder.append("&filter[limit]=1&");
         }
         if(!resource.contains("login")){
             builder.append("&access_token=").append(loginDTO.getAuthToken());

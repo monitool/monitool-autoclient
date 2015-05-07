@@ -7,18 +7,18 @@ import java.util.Date;
  */
 public class DataResponse {
 
-    private String sensorId;
+    private String hostId;
     private Date date;
     private double cpuLoad;
     private double memLoad;
     private double discLoad;
 
-    public String getSensorId() {
-        return sensorId;
+    public String getHostId() {
+        return hostId;
     }
 
-    public void setSensorId(String sensorId) {
-        this.sensorId = sensorId;
+    public void setHostId(String sensorId) {
+        this.hostId = sensorId;
     }
 
     public Date getDate() {

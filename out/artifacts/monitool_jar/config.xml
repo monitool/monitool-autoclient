@@ -5,14 +5,4 @@
 		<email>autoclient@monitool.com</email>
 		<password>autoclient</password>
 	</monitor>
-	<monitor>
-		<url>http://monitool.herokuapp.com:80/api/</url>
-		<email>autoclient@monitool.com</email>
-		<password>autoclient</password>
-	</monitor>
-	<monitor>
-		<url>http://monitool.herokuapp.com:80/api/</url>
-		<email>autoclient@monitool.com</email>
-		<password>autoclient</password>
-	</monitor>
 </monitors>
