@@ -26,12 +26,13 @@ public class ReadJob implements Job {
         restProcessor=new RestProcessor();
         try {
             List<SensorResponse> sensors = restProcessor.getSensors();
-            List<DataResponse> newestData = new ArrayList<DataResponse>();
+            List<DataResponse> newestData = new ArrayList<>();
             for(SensorResponse s:sensors) {
                 DataResponse data = restProcessor.getData(s.getId());
                 if(data!=null) newestData.add(data);
             }
             Mode mode = Mode.fromString((String) context.getJobDetail().getJobDataMap().get("mode"));
+            Printer.clear();
             Printer.print(sortAndFilterData(sensors, newestData, mode));
         } catch (IOException|HTTPException e) {
             System.exit(1);

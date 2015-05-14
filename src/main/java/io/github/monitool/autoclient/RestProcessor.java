@@ -58,8 +58,7 @@ public class RestProcessor {
         if(monitors.isEmpty()) login();
         String response = client.get(buildURL("hosts/" + sensorId + "/data/",this.sensorTokens.get(sensorId)));
         List<DataResponse> dataList = parseData(response);
-        Optional<DataResponse> data = Optional.of(dataList.get(0));
-        if(data.isPresent()){
+        if(!dataList.isEmpty()){
             String uptimeResponse = client.get(this.sensorTokens.get(sensorId).getUrl());
             UptimeResponse uptimeData = parseUptime(uptimeResponse);
             Calendar cal = Calendar.getInstance();
@@ -67,8 +66,8 @@ public class RestProcessor {
             cal.add(Calendar.MILLISECOND, (int)(uptimeData.getUptime()*1000));
             cal.add(Calendar.SECOND, -10);
             Date tresholdDate = cal.getTime();
-            if(data.get().getDate().after(tresholdDate)){
-                return data.get();
+            if(dataList.get(0).getDate().after(tresholdDate)){
+                return dataList.get(0);
             } else {
                 return null;
             }

@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0"?>
 <monitors>
 	<monitor>
-		<url>http://monitool.herokuapp.com:80/api/</url>
+		<url>http://monitool.herokuapp.com:80/</url>
 		<email>autoclient@monitool.com</email>
 		<password>autoclient</password>
 	</monitor>
